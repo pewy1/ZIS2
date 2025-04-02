@@ -1,7 +1,7 @@
     % Definice symbolických proměnných
     syms t t0 y0 R1 R2 C U real
     
-    % Definice symbolické funkce y(t)
+    % % Definice symbolické funkce y(t)
     syms y(t)
     
     % Rovnice:  -C*y'(t) + y(t)/R2 + (U0 - y(t))/R1 = 0
