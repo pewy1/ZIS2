@@ -25,21 +25,21 @@ Gd = c2d(G, Ts, 'zoh'); %diskrétní přenos
 figure;
 step(G);
 grid on;
-title('Odezva na jednotkový skok - přenos');
+title('Spojitý přenos systému - odezva na jednotkový skok');
 xlabel('Čas [s]');
 ylabel('Výstup');
 
 figure;
 step(Gd);
 grid on;
-title('Odezva na jednotkový skok - přenos c2d');
+title('Diskretizovaný přenos c2d - odezva na jednotkový skok');
 xlabel('Čas [s]');
 ylabel('Výstup');
 
 %% simulace - inicializace parametrů
 
 
-N = 20;             % počet kroků simulace
+N = 15;             % počet kroků simulace
 Ts = 0.01;           % vzorkovací perioda
 u = ones(1, N);      % vstup (např. skoková funkce)
 y = zeros(1, N);     % výstup
