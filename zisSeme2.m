@@ -111,7 +111,7 @@ F = 7000;
 a_true=a1k;
 b_true=b1k;
 sigma = 0.01;           % standardní odchylka šumu
-lambda = 0.9;          % zapomínací faktor
+lambda = 0.99;          % zapomínací faktor
 Ts=0.01;
 
 % Příprava paměti pro u, y, atd.
