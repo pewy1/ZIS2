@@ -1,4 +1,8 @@
 
+
+clc;
+close all;
+clear all;
 %inicializace parametrů systému
 R1=10;
 R2=20;
@@ -111,7 +115,7 @@ F = 7000;
 a_true=a1k;
 b_true=b1k;
 sigma = 0.01;           % standardní odchylka šumu
-lambda = 0.99;          % zapomínací faktor
+lambda = 0.9;          % zapomínací faktor
 Ts=0.01;
 
 % Příprava paměti pro u, y, atd.
@@ -120,7 +124,7 @@ y = zeros(1,F);
 y_bezSumu=zeros(1,F);
 y_est = zeros(1,F);
 e = sqrt(0.02) * randn(F, 1); 
-whiteNoise2= -10 + (20) * rand(N, 1);
+whiteNoise2= -10 + (20) * rand(F, 1);
 
 R_matice=zeros(1,F);
 thetaTrue = [a_true; b_true]; % "skutečné" parametry
@@ -128,6 +132,14 @@ thetaTrue = [a_true; b_true]; % "skutečné" parametry
 % Odhad: 2 parametry => theta = [a; b]
 thetaEstNoForget = zeros(2,F);   % RLS bez zapomínání
 thetaEstForget   = zeros(2,F);   % RLS s expon. zapomínáním
+
+T_real_simul=zeros(1,F); %reálné T při simulaci s proměnným R1;
+K_real_simul=zeros(1,F); %reálné K při simulaci s proměnným R1;
+
+T_est=zeros(1,F);   %hodnoty získané z odhadnutých parametrů
+K_est=zeros(1,F);
+
+err_ef=zeros(1,F);
 
 
 % Kovarianční matice (pro klasické RLS a RLS s EF)
@@ -165,6 +177,10 @@ for k = 2:F
 
     R_matice(k)=R1_promenne;
 
+
+    T_real_simul(k)=((R1_promenne*R2)/(R1_promenne+R2))*C;
+    K_real_simul(k)=R2/(R1_promenne+R2);
+
     T=((R1_promenne*R2)/(R1_promenne+R2))*C;
     K=R2/(R1_promenne+R2);
     a1k=-exp(-Ts/T);
@@ -193,38 +209,75 @@ for k = 2:F
     denom_ef = lambda*sigma^2 + phi_k' * P_ef * phi_k;
     K_ef = (P_ef * phi_k) / denom_ef;
     % aktualizace odhadu
-    err_ef = y(k) - phi_k' * thetaEstForget(:,k-1);
-    thetaEstForget(:,k) = thetaEstForget(:,k-1) + K_ef * err_ef;
+    err_ef(k) = y(k) - phi_k' * thetaEstForget(:,k-1); %rezidua
+    thetaEstForget(:,k) = thetaEstForget(:,k-1) + K_ef * err_ef(k);
     % aktualizace kovarianční matice
     P_ef = (1/lambda) * (P_ef - K_ef * phi_k' * P_ef);
     % uložení chyby odhadu
-    thetaErrForget(:,k) = thetaTrue - thetaEstForget(:,k);
+    thetaErrForget(:,k) = thetaTrue - thetaEstForget(:,k); %chyba odhadu
 
      y_est(k) = -thetaEstForget(1,k)*y(k-1) + thetaEstForget(2,k)*u(k-1);
+
+     a_est=thetaEstForget(1,k);
+     b_est=thetaEstForget(2,k);
+
+
+     T_est(k)=-((Ts)/log(-a_est));
+     K_est(k)=b_est/(1-exp(-Ts/T_est(k)));
+
+
+     
+
 end
 
 % Zobrazení výsledků
 t = 1:F;
-
+grid on;
 figure;
 plot(t, y, t, u, 'LineWidth', 1.2);
 legend('skutečný výstup se šumem','Vstup u(k)');
 xlabel('k');
 title('skutečný výstup se šumem a vstup');
+grid on;
+
+figure;
+plot(t, err_ef ,'LineWidth', 1.2);
+legend('reziduum r(k)');
+xlabel('k');
+title('reziduum r(k)');
+grid on;
+
 
 
 figure;
-plot(t, thetaEstForget(1,:), t, thetaEstForget(2,:), '--','LineWidth',1.2);
+plot(t, thetaEstForget(1,:), t, thetaEstForget(2,:), '-','LineWidth',1.2);
 legend('a - RLS-EF','b - RLS-EF');
 xlabel('k');
 title('Parametry - RLS s exponenciálním zapomínáním');
+grid on;
+
+
+figure;
+plot(t, T_est(1,:), t, T_real_simul(1,:), '-','LineWidth',1.2);
+legend('T-est','T-reeal');
+xlabel('k');
+title('Reálný a odhadnutý parametr T');
+grid on;
+
+figure;
+plot(t, K_est(1,:), t, K_real_simul(1,:), '-','LineWidth',1.2);
+legend('K-est','K-reeal');
+xlabel('k');
+title('Reálný a odhadnutý parametr K');
+grid on;
 
 
 figure;
 plot(t, thetaErrForget(1,:), t, thetaErrForget(2,:),'LineWidth',1.2);
 legend('Chyba a - EF','Chyba b - EF');
 xlabel('k');
-title('Chyba odhadu - s exponenciálním zapomínáním');
+title('Chyba odhadu parametrů- s exponenciálním zapomínáním');
+grid on;
 
 figure;
 plot(t,y,t, y_est, 'LineWidth', 1.2);
@@ -247,3 +300,58 @@ legend('R1');
 xlabel('k');
 title('R1 v čase');
 grid on;
+
+
+
+
+%% Popis proměnných ve skriptu
+
+% --- Parametry systému ---
+% R1, R2 .......... hodnoty odporů v ohmech
+% C ............... kapacita v faradech
+% Ts .............. vzorkovací doba (sampling period)
+
+% --- Přenos systému ---
+% T ............... časová konstanta systému (odvozená z R1, R2 a C)
+% K ............... statické zesílení systému
+% numerator ....... čitatel přenosové funkce (pro spojitý model)
+% denominator ..... jmenovatel přenosové funkce (pro spojitý model)
+% G ............... spojitý přenos systému
+% Gd .............. diskretizovaný přenos systému pomocí ZOH
+
+% --- Parametry ARX modelu ---
+% a1k ............. diskrétní parametr vyjadřující vliv minulého výstupu
+% b1k ............. diskrétní parametr vyjadřující vliv minulého vstupu
+% theta_k ......... vektor nominálních (počátečních) parametrů [a1k; b1k]
+% p ............... vektor fyzikálních parametrů [R1; R2; C]
+
+% --- Simulace ARX bez a se šumem ---
+% u ............... vstupní signál (např. skok nebo šum)
+% y ............... výstup systému
+% y_bezSumu ....... výstup systému bez přidaného šumu
+% whiteNoise ...... generovaný bílý šum (přidávaný do výstupu)
+% whiteNoise2 ..... náhodný vstupní signál (šum pro u)
+
+% --- Adaptivní odhad parametrů (RLS) ---
+% F ............... počet kroků simulace (časových vzorků)
+% e ............... šum měření (rušení na výstupu)
+% thetaTrue ....... skutečné (aktuální) hodnoty parametrů v čase [a; b]
+% thetaEstForget .. odhadnuté parametry pomocí RLS s exponenciálním zapomínáním
+% thetaErrForget .. chyba odhadu parametrů (thetaTrue - thetaEstForget)
+% y_est ........... odhadnutý výstup systému na základě thetaEstForget
+% phi_k ........... regrese [−y(k−1); u(k−1)]
+% P_ef ............ kovarianční matice odhadu pro RLS-EF
+% K_ef ............ zisk (gain) RLS algoritmu
+% err_ef .......... reziduum – rozdíl mezi skutečným a odhadnutým výstupem
+% lambda .......... zapomínací faktor RLS algoritmu (blízko 1 = pomalé zapomínání)
+% sigma ........... odhad směrodatné odchylky šumu (pro RLS)
+% R1_promenne ..... časově proměnná hodnota R1 (simulace změn systému)
+% R_matice ........ historie hodnot R1 v čase (pro vykreslení)
+
+% --- Grafy ---
+% time ............ časová osa pro diskrétní simulace
+% t ............... index pro grafické zobrazení vektorů (1:F)
+
+% --- Volitelné ---
+% thetaEstNoForget .... připraveno pro RLS bez zapomínání (nepoužívá se)
+% thetaErrNoForget .... chyba odhadu bez zapomínání (nepoužívá se)
