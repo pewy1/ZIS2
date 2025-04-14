@@ -115,7 +115,13 @@ F = 7000;
 a_true=a1k;
 b_true=b1k;
 sigma = 0.01;           % standardní odchylka šumu
-lambda = 0.9;          % zapomínací faktor
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+lambda = 0.99;          % zapomínací faktor
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 Ts=0.01;
 
 % Příprava paměti pro u, y, atd.
@@ -192,9 +198,9 @@ for k = 2:F
 
 
 
-    % u(k)=whiteNoise2(k); %šum jako vstupní signál
+     u(k)=whiteNoise2(k); %šum jako vstupní signál
     
-    u(k)=10*sign(sin(2*pi*0.05*Ts*(k-1))); %obdelníkový vstupní signál
+    %u(k)=10*sign(sin(2*pi*0.05*Ts*(k-1))); %obdelníkový vstupní signál
 
 
     % 2) Výpočet výstupu systému (skutečný model)
@@ -234,39 +240,66 @@ end
 t = 1:F;
 grid on;
 figure;
-plot(t, y, t, u, 'LineWidth', 1.2);
-legend('skutečný výstup se šumem','Vstup u(k)');
+plot(t, u, t, y, 'LineWidth', 1.2);
+legend('Skutečný výstup se šumem','Vstup u(k)');
 xlabel('k');
-title('skutečný výstup se šumem a vstup');
+title('Skutečný výstup se šumem a vstup');
 grid on;
 
 figure;
 plot(t, err_ef ,'LineWidth', 1.2);
-legend('reziduum r(k)');
+legend('Reziduum r(k)');
 xlabel('k');
-title('reziduum r(k)');
+title('Reziduum r(k)');
 grid on;
 
 
 
 figure;
 plot(t, thetaEstForget(1,:), t, thetaEstForget(2,:), '-','LineWidth',1.2);
-legend('a - RLS-EF','b - RLS-EF');
+legend('Odhad a1','Odhad b1');
 xlabel('k');
-title('Parametry - RLS s exponenciálním zapomínáním');
+title('Odhadnuté parametry - LS s exponenciálním zapomínáním');
+grid on;
+
+
+
+figure;
+hold on;
+plot(t, thetaEstForget(1,:), 'LineWidth', 1.5);                 % a (odhadnutý)
+plot(t, -exp(-Ts ./ T_real_simul), 'LineWidth', 1.5); hold on; % a (reálný)
+
+legend('a1 reálný','a1 odhadnutý');
+xlabel('k');
+ylabel('Hodnota a');
+title('Reálný a odhadnutý parametr a1');
 grid on;
 
 
 figure;
+hold on;
+plot(t, thetaEstForget(2,:), '-', 'LineWidth', 1.5);                                      % b (odhadnutý)
+plot(t, K_real_simul .* (1 - exp(-Ts ./ T_real_simul)), '-', 'LineWidth', 1.5); hold on; % b (reálný)
+
+legend('b1 reálný','b1 odhadnutý');
+xlabel('k');
+ylabel('Hodnota b1');
+title('Reálný a odhadnutý parametr b1');
+grid on;
+
+
+
+
+figure;
 plot(t, T_est(1,:), t, T_real_simul(1,:), '-','LineWidth',1.2);
-legend('T-est','T-reeal');
+legend('T odhadnutý','T reálný');
 xlabel('k');
 title('Reálný a odhadnutý parametr T');
 grid on;
 
 figure;
 plot(t, K_est(1,:), t, K_real_simul(1,:), '-','LineWidth',1.2);
-legend('K-est','K-reeal');
+legend('K odhadnutý','K reálný');
 xlabel('k');
 title('Reálný a odhadnutý parametr K');
 grid on;
@@ -274,23 +307,23 @@ grid on;
 
 figure;
 plot(t, thetaErrForget(1,:), t, thetaErrForget(2,:),'LineWidth',1.2);
-legend('Chyba a - EF','Chyba b - EF');
+legend('Chyba a1','Chyba b1');
 xlabel('k');
-title('Chyba odhadu parametrů- s exponenciálním zapomínáním');
+title('Chyba odhadu parametrů - LS s exponenciálním zapomínáním');
 grid on;
 
 figure;
 plot(t,y,t, y_est, 'LineWidth', 1.2);
-legend('skutečný výstup se šumem','odhadovaný výstup');
+legend('Skutečný výstup se šumem','Odhadovaný výstup');
 xlabel('k');
-title('skutečný (+šum) a odhadovaný výstup');
+title('Skutečný výstup se šumem a odhadovaný výstup');
 grid on;
 
 figure;
 plot(t, y_bezSumu, 'LineWidth', 1.2);
-legend('výstup bez šumu');
+legend('Výstup bez šumu');
 xlabel('k');
-title('výstup bez sumu');
+title('Výstup bez šumu');
 grid on;
 
 
@@ -298,7 +331,7 @@ figure;
 plot(t, R_matice, 'LineWidth', 1.2);
 legend('R1');
 xlabel('k');
-title('R1 v čase');
+title('Hodnota parametru R1 v čase');
 grid on;
 
 
